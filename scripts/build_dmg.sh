@@ -31,9 +31,6 @@ xcodebuild \
   -project "$PROJECT_ROOT/ClaudeCodeManager.xcodeproj" \
   -scheme "$SCHEME" \
   -configuration "$CONFIGURATION" \
-  CODE_SIGN_IDENTITY="-" \
-  CODE_SIGNING_REQUIRED=NO \
-  CODE_SIGNING_ALLOWED=NO \
   build
 
 BUILD_DIR=$(xcodebuild \
@@ -76,4 +73,4 @@ echo ""
 echo "✓ Done: $FINAL_DMG"
 echo "  Size: $(du -sh "$FINAL_DMG" | cut -f1)"
 echo ""
-echo "NOTE: 配布先では初回起動時に右クリック → '開く' が必要です（署名なしのため）"
+echo "  codesign: $(codesign -dv "$FINAL_DMG" 2>&1 | head -1 || echo 'n/a')"

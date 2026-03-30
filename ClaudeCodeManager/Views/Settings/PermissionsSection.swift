@@ -7,20 +7,78 @@ struct PermissionsSection: View {
 
     private let allowPresets = [
         "Bash(npm run *)",
+        "Bash(npm test *)",
+        "Bash(npx prettier *)",
+        "Bash(npx eslint *)",
+        "Bash(git status)",
+        "Bash(git diff *)",
+        "Bash(git log *)",
+        "Bash(git commit *)",
         "Bash(git *)",
         "Bash(make *)",
         "Bash(cargo *)",
         "Bash(go *)",
+        "Bash(ls *)",
+        "Bash(cat *)",
+        "Bash(grep *)",
         "Read(*)",
     ]
 
     private let denyPresets = [
+        "Read(~/.ssh/**)",
+        "Read(~/.aws/**)",
+        "Read(~/.gnupg/**)",
         "Read(.env)",
+        "Read(.env.*)",
+        "Read(*.env)",
         "Read(*.pem)",
+        "Bash(curl *)",
+        "Bash(wget *)",
+        "Bash(nc *)",
+        "Bash(ssh *)",
+        "Bash(git push *)",
         "Bash(rm -rf *)",
         "Bash(sudo *)",
-        "Bash(curl * | bash)",
-        "Bash(wget * | sh)",
+    ]
+
+    // 記事推奨: 機密ファイル保護フルセット
+    private let sensitiveFileDenyPresets = [
+        "Read(~/.ssh/**)",
+        "Read(~/.gnupg/**)",
+        "Read(~/.aws/**)",
+        "Read(~/.azure/**)",
+        "Read(~/.kube/**)",
+        "Read(~/.npmrc)",
+        "Read(~/.git-credentials)",
+        "Read(~/.config/gh/**)",
+        "Edit(~/.bashrc)",
+        "Edit(~/.zshrc)",
+        "Read(*.env)",
+        "Read(.env.*)",
+    ]
+
+    // 記事推奨: ネットワークコマンドブロック
+    private let networkBlockDenyPresets = [
+        "Bash(curl *)",
+        "Bash(wget *)",
+        "Bash(nc *)",
+        "Bash(ssh *)",
+        "Bash(git push *)",
+    ]
+
+    // 記事推奨: 安全な操作の自動許可
+    private let safeOperationsAllowPresets = [
+        "Bash(npm run *)",
+        "Bash(npm test *)",
+        "Bash(npx prettier *)",
+        "Bash(npx eslint *)",
+        "Bash(git status)",
+        "Bash(git diff *)",
+        "Bash(git log *)",
+        "Bash(git commit *)",
+        "Bash(ls *)",
+        "Bash(cat *)",
+        "Bash(grep *)",
     ]
 
     var body: some View {
@@ -51,6 +109,14 @@ struct PermissionsSection: View {
                             placeholder: "例: Bash(npm run *)",
                             presets: allowPresets
                         )
+
+                        Button {
+                            addAllowPresets(safeOperationsAllowPresets)
+                        } label: {
+                            Label("安全な操作を一括許可（推奨）", systemImage: "checkmark.seal.fill")
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
                     }
                 }
 
@@ -78,22 +144,30 @@ struct PermissionsSection: View {
                             presets: denyPresets
                         )
 
-                        HStack(spacing: 8) {
-                            Button {
-                                addDenyPresets(["Read(.env)", "Read(*.pem)", "Read(*.key)"])
-                            } label: {
-                                Label(".envファイル保護", systemImage: "lock.fill")
-                            }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("クイック設定")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            HStack(spacing: 8) {
+                                Button {
+                                    addDenyPresets(sensitiveFileDenyPresets)
+                                } label: {
+                                    Label("機密ファイルを一括保護", systemImage: "lock.shield.fill")
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
 
-                            Button {
-                                addDenyPresets(["Bash(sudo *)", "Bash(rm -rf *)", "Bash(curl * | bash)"])
-                            } label: {
-                                Label("危険コマンドブロック", systemImage: "exclamationmark.triangle.fill")
+                                Button {
+                                    addDenyPresets(networkBlockDenyPresets)
+                                } label: {
+                                    Label("ネットワークコマンドをブロック", systemImage: "network.slash")
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
                             }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
+                            Text("機密ファイル: ~/.ssh, ~/.aws, ~/.gnupg 等 + .env 系 / ネットワーク: curl, wget, nc, ssh, git push")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
                         }
                     }
                 }
@@ -183,11 +257,18 @@ struct PermissionsSection: View {
     private func addDenyPresets(_ presets: [String]) {
         settings.ensurePermissions()
         var current = settings.permissions?.deny ?? []
-        for preset in presets {
-            if !current.contains(preset) {
-                current.append(preset)
-            }
+        for preset in presets where !current.contains(preset) {
+            current.append(preset)
         }
         settings.permissions?.deny = current
+    }
+
+    private func addAllowPresets(_ presets: [String]) {
+        settings.ensurePermissions()
+        var current = settings.permissions?.allow ?? []
+        for preset in presets where !current.contains(preset) {
+            current.append(preset)
+        }
+        settings.permissions?.allow = current
     }
 }

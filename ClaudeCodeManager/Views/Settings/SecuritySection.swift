@@ -67,6 +67,40 @@ struct SecuritySection: View {
                     Text("サンドボックス")
                 }
 
+                // MARK: - Sandbox filesystem
+                if settings.sandbox?.enabled == true {
+                    Section("サンドボックス ファイルシステム保護") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            SettingRow(label: "読み取り拒否パス (sandbox.filesystem.denyRead)",
+                                       key: "sandbox.filesystem.denyRead",
+                                       description: "サンドボックス内プロセスからも読み取れないパス。AIが動かすプログラムからも .env 等を隠す")
+                            TagEditor(
+                                items: Binding(
+                                    get: { settings.sandbox?.filesystem?.denyRead ?? [] },
+                                    set: { v in
+                                        settings.ensureSandboxFilesystem()
+                                        settings.sandbox?.filesystem?.denyRead = v.isEmpty ? nil : v
+                                    }
+                                ),
+                                placeholder: "例: ./.env",
+                                presets: ["./.env", "./.env.*", "./.env.local", "./.env.production"]
+                            )
+                            Button {
+                                settings.ensureSandboxFilesystem()
+                                var current = settings.sandbox?.filesystem?.denyRead ?? []
+                                for path in ["./.env", "./.env.*"] where !current.contains(path) {
+                                    current.append(path)
+                                }
+                                settings.sandbox?.filesystem?.denyRead = current
+                            } label: {
+                                Label(".env 系を一括追加", systemImage: "lock.fill")
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                        }
+                    }
+                }
+
                 // MARK: - Network (sandbox)
                 if settings.sandbox?.enabled == true {
                     Section("ネットワーク制御 (sandbox.network)") {
@@ -130,6 +164,18 @@ struct SecuritySection: View {
                         SettingRow(label: "すべての Hooks を無効化",
                                    key: "disableAllHooks",
                                    description: "hooks と statusLine を含むすべてのカスタムコマンドを無効化。トラブルシュート時に便利")
+                    }
+                }
+
+                // MARK: - MCP auto-load
+                Section("MCP 自動読み込み") {
+                    Toggle(isOn: Binding(
+                        get: { !(settings.enableAllProjectMcpServers ?? true) },
+                        set: { settings.enableAllProjectMcpServers = !$0 }
+                    )) {
+                        SettingRow(label: "プロジェクト MCP を自動有効化しない",
+                                   key: "enableAllProjectMcpServers: false",
+                                   description: "新しいプロジェクトを開いたとき .mcp.json の設定を自動で読み込まない。Check Point 推奨（2026年2月の悪意ある MCP インジェクション対策）")
                     }
                 }
 

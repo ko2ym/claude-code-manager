@@ -88,10 +88,15 @@ struct ClaudeSettings: Codable, Equatable {
         var excludedCommands: [String]?
         var allowUnsandboxedCommands: Bool?
         var network: SandboxNetwork?
+        var filesystem: SandboxFilesystem?
 
         struct SandboxNetwork: Codable, Equatable {
             var allowedDomains: [String]?
             var allowLocalBinding: Bool?
+        }
+
+        struct SandboxFilesystem: Codable, Equatable {
+            var denyRead: [String]?
         }
     }
 
@@ -121,6 +126,11 @@ struct ClaudeSettings: Codable, Equatable {
     mutating func ensureSandboxNetwork() {
         ensureSandbox()
         if sandbox?.network == nil { sandbox?.network = Sandbox.SandboxNetwork() }
+    }
+
+    mutating func ensureSandboxFilesystem() {
+        ensureSandbox()
+        if sandbox?.filesystem == nil { sandbox?.filesystem = Sandbox.SandboxFilesystem() }
     }
 
     // MARK: - Agent Teams helpers
